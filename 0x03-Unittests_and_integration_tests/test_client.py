@@ -98,7 +98,6 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         cls.get_patcher = patch("requests.get")
         mock_get = cls.get_patcher.start()
 
-        # Define side_effect function
         def side_effect(url):
             class MockResponse:
                 def __init__(self, payload):
@@ -121,12 +120,10 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         cls.get_patcher.stop()
 
     def test_public_repos(self):
-        """Test that public_repos returns expected repo names."""
         client = GithubOrgClient(self.org_payload["login"])
         self.assertEqual(client.public_repos(), self.expected_repos)
 
     def test_public_repos_with_license(self):
-        """Test that public_repos filters repos by license."""
         client = GithubOrgClient(self.org_payload["login"])
         self.assertEqual(client.public_repos(license="apache-2.0"), self.apache2_repos)
 
