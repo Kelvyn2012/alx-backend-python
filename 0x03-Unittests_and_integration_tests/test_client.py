@@ -9,6 +9,21 @@ from client import GithubOrgClient
 
 
 class TestGithubOrgClient(unittest.TestCase):
+
+    def test_has_license(self):
+        """
+        Unit-test GithubOrgClient.has_license.
+        It should return True if repo has the specified license key,
+        False otherwise.
+        """
+        repo_with_license = {"license": {"key": "my_license"}}
+        repo_without_license = {"license": {"key": "other_license"}}
+
+        self.assertTrue(GithubOrgClient.has_license(repo_with_license, "my_license"))
+        self.assertFalse(
+            GithubOrgClient.has_license(repo_without_license, "my_license")
+        )
+
     """Tests for the GithubOrgClient class."""
 
     @parameterized.expand(
