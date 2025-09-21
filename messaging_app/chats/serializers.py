@@ -7,6 +7,8 @@ User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(source="get_full_name", read_only=True)
+
     class Meta:
         model = User
         fields = [
@@ -21,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    sender = UserSerializer(read_only=True)
+    sender = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
@@ -45,3 +47,11 @@ class ConversationSerializer(serializers.ModelSerializer):
             "messages",
             "participants",
         ]
+
+    def validate(self, data):
+        participants = self.initial_data.get("participants", [])
+        if len(participants) < 2:
+            raise serializers.ValidationError(
+                "A conversation must have at least two participants."
+            )
+        return data
