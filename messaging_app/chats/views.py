@@ -1,7 +1,8 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from django.contrib.auth import get_user_model
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -9,14 +10,22 @@ User = get_user_model()
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all()
     serializer_class = ConversationSerializer
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["participants__username"]  # search by participant username
-    ordering_fields = ["created_at"]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        conversation = serializer.save()
+        # Optionally add the logged-in user to participants
+        conversation.participants.add(request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["message_body", "sender__username"]  # search by content or sender
-    ordering_fields = ["sent_at"]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(sender=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
