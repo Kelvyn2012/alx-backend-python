@@ -1,6 +1,7 @@
 from rest_framework_nested.routers import DefaultRouter, NestedDefaultRouter
 from django.urls import path, include
 from .views import ConversationViewSet, MessageViewSet
+from chats import auth
 
 # main router
 router = DefaultRouter()
@@ -17,4 +18,6 @@ conversations_router.register(
 urlpatterns = [
     path("", include(router.urls)),
     path("", include(conversations_router.urls)),
+    path("api/token/", auth.TokenObtainPair, name="token_obtain_pair"),
+    path("api/token/refresh/", auth.TokenRefresh, name="token_refresh"),
 ]

@@ -15,20 +15,18 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=150, blank=False)
     password = models.CharField(max_length=128)
 
+    user_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False, unique=True, db_index=True
+    )
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    role = models.CharField(max_length=10, choices=USER_ROLES, default="guest")
+    created_at = models.DateTimeField(auto_now_add=True)
 
-user_id = models.UUIDField(
-    primary_key=True, default=uuid.uuid4, editable=False, unique=True, db_index=True
-)
-phone_number = models.CharField(max_length=20, blank=True, null=True)
-role = models.CharField(max_length=10, choices="USER_ROLES", default="guest")
-created_at = models.DateTimeField(auto_now_add=True)
+    # email should be unique, AbstractUser already has email but we enforce uniqueness
+    email = models.EmailField(unique=True)
 
-# email should be unique, AbstractUser already has email but we enforce uniqueness
-email = models.EmailField(unique=True)
-
-
-def __str__(self):
-    return f"{self.username} and ({self.email})"
+    def __str__(self):
+        return f"{self.username} and ({self.email})"
 
 
 class Conversation(models.Model):
@@ -55,10 +53,10 @@ class Message(models.Model):
         primary_key=True, default=uuid.uuid4, editable=False, unique=True
     )
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="messages")
-    Conversation = models.ForeignKey(
+    conversation = models.ForeignKey(
         Conversation, on_delete=models.CASCADE, related_name="messages"
     )
-    message_body = models.TimeField()
+    message_body = models.TextField()
     sent_at = models.DateField(auto_now_add=True)
 
     def __str__(self):

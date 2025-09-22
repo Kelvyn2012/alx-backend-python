@@ -2,7 +2,7 @@ import django_filters
 from .models import Message
 
 
-class MessageFilter(django_filters.filterset):
+class MessageFilter(django_filters.FilterSet):
     # filter messages by sender username
     sender = django_filters.CharFilter(
         field_name="sender__username", lookup_expr="icontains"
