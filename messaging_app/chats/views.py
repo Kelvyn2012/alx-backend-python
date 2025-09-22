@@ -17,7 +17,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at"]
 
     def get_queryset(self):
-        # Only return conversations the user is part of
+        # Only conversations where the current user is a participant
         return Conversation.objects.filter(participants=self.request.user)
 
     def create(self, request, *args, **kwargs):
@@ -36,11 +36,32 @@ class MessageViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsParticipantOfConversation]
 
     def get_queryset(self):
-        # Only return messages in conversations the user participates in
+        # Only messages in conversations where the user is a participant
         return Message.objects.filter(conversation__participants=self.request.user)
 
     def create(self, request, *args, **kwargs):
+        conversation_id = request.data.get("conversation")
+        if not conversation_id:
+            return Response(
+                {"detail": "conversation_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            conversation = Conversation.objects.get(id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response(
+                {"detail": "Conversation not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Check if user is allowed
+        if request.user not in conversation.participants.all():
+            return Response(
+                {"detail": "You are not a participant in this conversation."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(sender=request.user)
+        serializer.save(sender=request.user, conversation=conversation)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
