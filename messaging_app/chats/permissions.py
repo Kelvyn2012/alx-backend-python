@@ -1,20 +1,20 @@
-from rest_framework import permissions
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
-class IsParticipantOfConversation(permissions.BasePermission):
+class IsParticipantOfConversation(BasePermission):
     """
-    Allow access only to participants of a conversation.
+    Custom permission to allow only participants of a conversation
+    to access or modify it.
     """
-
-    def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
-        # Conversation object
-        if hasattr(obj, "participants"):
+        # Read-only permissions allowed for authenticated users
+        if request.method in SAFE_METHODS:
             return request.user in obj.participants.all()
 
-        # Message object
-        if hasattr(obj, "conversation"):
-            return request.user in obj.conversation.participants.all()
-        return False
+        # Explicitly handle write methods (PUT, PATCH, DELETE)
+        if request.method in ["PUT", "PATCH", "DELETE"]:
+            return request.user in obj.participants.all()
+
+        # For other cases (e.g., creating a message)
+        return request.user in obj.participants.all()

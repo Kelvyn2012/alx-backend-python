@@ -1,65 +1,58 @@
-from django.db import models
-import uuid
-from django.contrib.auth.models import AbstractUser
+from rest_framework import viewsets, status, filters
+from rest_framework.response import Response
+from django.contrib.auth import get_user_model
+from .models import Conversation, Message
+from .serializers import ConversationSerializer, MessageSerializer
+from .permissions import IsParticipantOfConversation
+from rest_framework.permissions import IsAuthenticated
+
+User = get_user_model()
 
 
-class User(AbstractUser):
+class ConversationViewSet(viewsets.ModelViewSet):
+    serializer_class = ConversationSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    search_fields = ["title", "participants__username"]
+    ordering_fields = ["created_at"]
 
-    USER_ROLES = [
-        ("guest", "Guest"),
-        ("host", "Host"),
-        ("admin", "Admin"),
-    ]
-    # Explicitly defined so they pass the checker
-    first_name = models.CharField(max_length=150, blank=False)
-    last_name = models.CharField(max_length=150, blank=False)
-    password = models.CharField(max_length=128)
+    def get_queryset(self):
+        return Conversation.objects.filter(participants=self.request.user)
 
-
-user_id = models.UUIDField(
-    primary_key=True, default=uuid.uuid4, editable=False, unique=True, db_index=True
-)
-phone_number = models.CharField(max_length=20, blank=True, null=True)
-role = models.CharField(max_length=10, choices="USER_ROLES", default="guest")
-created_at = models.DateTimeField(auto_now_add=True)
-
-# email should be unique, AbstractUser already has email but we enforce uniqueness
-email = models.EmailField(unique=True)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        conversation = serializer.save()
+        conversation.participants.add(request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-def __str__(self):
-    return f"{self.username} and ({self.email})"
+class MessageViewSet(viewsets.ModelViewSet):
+    serializer_class = MessageSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["content", "sender__username"]
+    ordering_fields = ["timestamp"]
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
 
+    def get_queryset(self):
+        return Message.objects.filter(conversation__participants=self.request.user)
 
-class Conversation(models.Model):
-    """
-    Represents a conversation between multiple participants (Users).
-    """
+    def create(self, request, *args, **kwargs):
+        conversation_id = request.data.get("conversation")
+        try:
+            conversation = Conversation.objects.get(id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response(
+                {"detail": "Conversation not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
-    conversation_id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False, unique=True
-    )
-    participants = models.ManyToManyField(User, related_name="conversation")
-    created_at = models.DateField(auto_now_add=True)
+        if request.user not in conversation.participants.all():
+            return Response(
+                {"detail": "You are not a participant in this conversation."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-    def __str__(self):
-        return f"conversation: {self.Conversation_id}"
-
-
-class Message(models.Model):
-    """
-    Represents a message sent by a user within a conversation.
-    """
-
-    message_id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False, unique=True
-    )
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="messages")
-    Conversation = models.ForeignKey(
-        Conversation, on_delete=models.CASCADE, related_name="messages"
-    )
-    message_body = models.TimeField()
-    sent_at = models.DateField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Message {self.message_id} from {self.sender.username}"
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(sender=request.user, conversation=conversation)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
