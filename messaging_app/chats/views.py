@@ -5,6 +5,9 @@ from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 from .permissions import IsParticipantOfConversation
 from rest_framework.permissions import IsAuthenticated
+from .filters import MessageFilter
+from .pagination import MessagePagination
+from django_filters.rest_framework import DjangoFilterBackend
 
 User = get_user_model()
 
@@ -17,7 +20,6 @@ class ConversationViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at"]
 
     def get_queryset(self):
-        # Only conversations where the current user is a participant
         return Conversation.objects.filter(participants=self.request.user)
 
     def create(self, request, *args, **kwargs):
@@ -30,13 +32,18 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+    filterset_class = MessageFilter
+    pagination_class = MessagePagination
     search_fields = ["content", "sender__username"]
     ordering_fields = ["timestamp"]
     permission_classes = [IsAuthenticated, IsParticipantOfConversation]
 
     def get_queryset(self):
-        # Only messages in conversations where the user is a participant
         return Message.objects.filter(conversation__participants=self.request.user)
 
     def create(self, request, *args, **kwargs):
@@ -54,7 +61,6 @@ class MessageViewSet(viewsets.ModelViewSet):
                 {"detail": "Conversation not found."}, status=status.HTTP_404_NOT_FOUND
             )
 
-        # Check if user is allowed
         if request.user not in conversation.participants.all():
             return Response(
                 {"detail": "You are not a participant in this conversation."},
