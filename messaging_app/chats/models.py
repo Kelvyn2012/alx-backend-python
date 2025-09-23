@@ -10,10 +10,6 @@ class User(AbstractUser):
         ("host", "Host"),
         ("admin", "Admin"),
     ]
-    # Explicitly defined so they pass the checker
-    first_name = models.CharField(max_length=150, blank=False)
-    last_name = models.CharField(max_length=150, blank=False)
-    password = models.CharField(max_length=128)
 
     user_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, unique=True, db_index=True

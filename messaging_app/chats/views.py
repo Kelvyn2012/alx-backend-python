@@ -32,6 +32,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -41,24 +42,27 @@ class MessageViewSet(viewsets.ModelViewSet):
     pagination_class = MessagePagination
     search_fields = ["content", "sender__username"]
     ordering_fields = ["timestamp"]
-    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
 
     def get_queryset(self):
+        """Only return messages in conversations the user participates in."""
         return Message.objects.filter(conversation__participants=self.request.user)
 
     def create(self, request, *args, **kwargs):
-        conversation_id = request.data.get("conversation")
+        """Create a new message in the given conversation (from URL)."""
+        conversation_id = kwargs.get("conversation_pk")
+
         if not conversation_id:
             return Response(
-                {"detail": "conversation_id is required."},
+                {"detail": "conversation_id is missing from the URL."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
-            conversation = Conversation.objects.get(id=conversation_id)
+            conversation = Conversation.objects.get(conversation_id=conversation_id)
         except Conversation.DoesNotExist:
             return Response(
-                {"detail": "Conversation not found."}, status=status.HTTP_404_NOT_FOUND
+                {"detail": "Conversation not found."},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         if request.user not in conversation.participants.all():
@@ -70,4 +74,5 @@ class MessageViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(sender=request.user, conversation=conversation)
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)

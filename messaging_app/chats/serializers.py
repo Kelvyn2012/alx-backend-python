@@ -25,16 +25,21 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    sender = serializers.SerializerMethodField()
+    sender = serializers.StringRelatedField(read_only=True)  # or customize
+    conversation = serializers.UUIDField(
+        source="conversation.conversation_id", read_only=True
+    )
 
     class Meta:
         model = Message
         fields = [
             "message_id",
             "sender",
+            "conversation",
             "message_body",
             "sent_at",
         ]
+        read_only_fields = ["sender", "conversation", "sent_at"]
 
 
 class ConversationSerializer(serializers.ModelSerializer):
