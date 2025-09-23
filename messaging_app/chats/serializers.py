@@ -14,11 +14,13 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "user_id",
             "username",
-            "firstname",
-            "lastname",
-            "created_at" "email",
+            "first_name",
+            "last_name",
+            "created_at",
+            "email",
             "phone_number",
             "role",
+            "full_name",
         ]
 
 

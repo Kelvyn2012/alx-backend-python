@@ -41,7 +41,7 @@ class Conversation(models.Model):
     created_at = models.DateField(auto_now_add=True)
 
     def __str__(self):
-        return f"conversation: {self.Conversation_id}"
+        return f"conversation: {self.conversation_id}"
 
 
 class Message(models.Model):
