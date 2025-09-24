@@ -30,3 +30,15 @@
 2025-09-24 21:32:07.934287 - User: Guest - Path: /api/conversations/2c65e11b-31fa-44ee-945c-0d404682a322/messages/
 2025-09-24 21:32:07 - IP: 127.0.0.1 - Path: /api/conversations/2c65e11b-31fa-44ee-945c-0d404682a322/messages/
 2025-09-24 21:33:29.313506 - User: Guest - Path: /api/conversations/
+2025-09-24 22:29:14.275346 - User: Guest - Path: /api/token/
+2025-09-24 22:29:51.962670 - User: Guest - Path: /api/conversations/
+2025-09-24 22:30:24.479163 - User: Guest - Path: /api/conversations/2c65e11b-31fa-44ee-945c-0d404682a322/messages/
+2025-09-24 22:30:24 - IP: 127.0.0.1 - Path: /api/conversations/2c65e11b-31fa-44ee-945c-0d404682a322/messages/
+2025-09-24 22:30:46.201685 - User: Guest - Path: /api/token/
+2025-09-24 22:31:13.321403 - User: Guest - Path: /api/conversations/
+2025-09-24 22:31:46.182654 - User: Guest - Path: /api/conversations/
+2025-09-24 22:31:46 - IP: 127.0.0.1 - Path: /api/conversations/
+2025-09-24 22:33:18.132509 - User: Guest - Path: /api/conversations/messages/
+2025-09-24 22:33:18 - IP: 127.0.0.1 - Path: /api/conversations/messages/
+2025-09-24 22:33:27.494466 - User: Guest - Path: /api/conversations/messages/
+2025-09-24 22:33:41.929802 - User: Guest - Path: /api/conversations/2c65e11b-31fa-44ee-945c-0d404682a322/messages/

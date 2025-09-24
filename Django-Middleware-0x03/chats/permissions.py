@@ -1,6 +1,32 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
+class IsAdminOrParticipant(BasePermission):
+    """
+    - Admin users can access everything.
+    - Non-admins must be participants of the conversation/message.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # Allow admin full access
+        if (
+            request.user
+            and request.user.is_authenticated
+            and request.user.role == "admin"
+        ):
+            return True
+
+        # For Conversations
+        if hasattr(obj, "participants"):
+            return request.user in obj.participants.all()
+
+        # For Messages (check conversation participants)
+        if hasattr(obj, "conversation"):
+            return request.user in obj.conversation.participants.all()
+
+        return False
+
+
 class IsParticipantOfConversation(BasePermission):
     """
     Only authenticated participants of a conversation

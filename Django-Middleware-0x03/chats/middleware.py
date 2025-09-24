@@ -112,3 +112,33 @@ class OffensiveLanguageMiddleware:
         if x_forwarded_for:
             return x_forwarded_for.split(",")[0].strip()
         return request.META.get("REMOTE_ADDR")
+
+
+class RolePermissionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        # Define protected paths with allowed roles
+        self.role_permissions = {
+            "/admin/": {"admin"},
+            "/conversations/delete/": {"admin"},
+            "/conversations/create/": {"admin", "host"},
+            "/conversations/moderate/": {"admin"},
+        }
+
+    def __call__(self, request):
+        for path, allowed_roles in self.role_permissions.items():
+            if request.path.startswith(path):
+                user = request.user
+
+                if not user.is_authenticated:
+                    return HttpResponseForbidden("Authentication required.")
+
+                if getattr(user, "role", None) in allowed_roles:
+                    return self.get_response(request)
+
+                return HttpResponseForbidden(
+                    "You do not have permission to access this resource."
+                )
+
+        # If path not protected → allow
+        return self.get_response(request)

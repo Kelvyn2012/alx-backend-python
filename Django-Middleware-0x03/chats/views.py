@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
-from .permissions import IsParticipantOfConversation
+from .permissions import IsParticipantOfConversation, IsAdminOrParticipant
 from rest_framework.permissions import IsAuthenticated
 from .filters import MessageFilter
 from .pagination import MessagePagination
@@ -15,11 +15,18 @@ User = get_user_model()
 class ConversationViewSet(viewsets.ModelViewSet):
     serializer_class = ConversationSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    permission_classes = [
+        IsAuthenticated,
+        IsParticipantOfConversation,
+        IsAdminOrParticipant,
+    ]
     search_fields = ["title", "participants__username"]
     ordering_fields = ["created_at"]
 
     def get_queryset(self):
+        user = self.request.user
+        if user.role == "admin":
+            return Conversation.objects.all()  # Admin sees everything
         return Conversation.objects.filter(participants=self.request.user)
 
     def create(self, request, *args, **kwargs):
@@ -32,7 +39,11 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
-    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    permission_classes = [
+        IsAuthenticated,
+        IsParticipantOfConversation,
+        IsAdminOrParticipant,
+    ]
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -44,7 +55,9 @@ class MessageViewSet(viewsets.ModelViewSet):
     ordering_fields = ["timestamp"]
 
     def get_queryset(self):
-        """Only return messages in conversations the user participates in."""
+        user = self.request.user
+        if user.role == "admin":
+            return Message.objects.all()  # Admin sees all messages
         return Message.objects.filter(conversation__participants=self.request.user)
 
     def create(self, request, *args, **kwargs):
