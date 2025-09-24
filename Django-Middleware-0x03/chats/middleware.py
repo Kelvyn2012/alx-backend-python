@@ -48,12 +48,6 @@ class RestrictAccessByTimeMiddleware:
         return response
 
 
-# chats/middleware.py
-import time
-from collections import defaultdict
-from django.http import HttpResponseForbidden
-
-
 class OffensiveLanguageMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
