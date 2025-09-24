@@ -64,7 +64,7 @@ class OffensiveLanguageMiddleware:
         self.time_window = 60  # seconds (1 minute)
 
         # Offensive words list
-        self.banned_words = {"badword", "offensive", "curse"}
+        self.banned_words = {"badword", "offensive", "curse", "hate", "kill", "fuckyou"}
 
         # Logger setup
         self.logger = logging.getLogger("offensive_logger")
