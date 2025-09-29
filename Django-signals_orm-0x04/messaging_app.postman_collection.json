@@ -1,0 +1,210 @@
+{
+    "info": {
+        "name": "Messaging App API",
+        "_postman_id": "b5c037ee-9ff9-4fa1-93dd-3af075deb108",
+        "description": "Postman collection for testing messaging_app API endpoints",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Get JWT Token",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"username\": \"your_user\",\n  \"password\": \"your_password\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8000/api/token/",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8000",
+                    "path": [
+                        "api",
+                        "token",
+                        ""
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Refresh JWT Token",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"refresh\": \"your_refresh_token\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8000/api/token/refresh/",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8000",
+                    "path": [
+                        "api",
+                        "token",
+                        "refresh",
+                        ""
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Create Conversation",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"participants\": [2,3]\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8000/api/conversations/",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8000",
+                    "path": [
+                        "api",
+                        "conversations",
+                        ""
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Send Message",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"conversation\": 1,\n  \"message_body\": \"Hello!\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8000/api/messages/",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8000",
+                    "path": [
+                        "api",
+                        "messages",
+                        ""
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "List Conversations",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:8000/api/conversations/",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8000",
+                    "path": [
+                        "api",
+                        "conversations",
+                        ""
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "List Messages with Filters",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:8000/api/messages/?sender=username&start_date=2025-09-01T00:00&end_date=2025-09-22T23:59",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8000",
+                    "path": [
+                        "api",
+                        "messages"
+                    ],
+                    "query": [
+                        {
+                            "key": "sender",
+                            "value": "username"
+                        },
+                        {
+                            "key": "start_date",
+                            "value": "2025-09-01T00:00"
+                        },
+                        {
+                            "key": "end_date",
+                            "value": "2025-09-22T23:59"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "access_token",
+            "value": ""
+        }
+    ]
+}
