@@ -21,9 +21,21 @@ class Message(models.Model):
         related_name="edited_messages",
         on_delete=models.SET_NULL,
     )
+    parent_message = models.ForeignKey(
+        "self", null=True, blank=True, related_name="replies", on_delete=models.CASCADE
+    )
 
     def __str__(self):
         return f"from {self.sender} to {self.receiver}: {self.content[:20]}"
+
+    """ Recursive function to fetch replies """
+
+    def get_thread(self):
+        """Fetch this message and all its replies recursively"""
+        thread = [self]
+        for reply in self.replies.all().select_related("sender", "receiver"):
+            thread.extend(reply.get_thread())
+        return thread
 
 
 class MessageHistory(models.Model):
