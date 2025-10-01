@@ -9,7 +9,9 @@ User = get_user_model()
 @login_required
 def inbox_view(request):
     """Show only unread messages for the current user"""
-    unread_messages = Message.unread.for_user(request.user)
+    unread_messages = Message.unread.unread_for_user(request.user).only(
+        "id", "sender", "content", "created_at"
+    )
     return render(request, "messaging/inbox.html", {"messages": unread_messages})
 
 
