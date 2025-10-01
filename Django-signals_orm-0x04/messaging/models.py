@@ -2,6 +2,18 @@ from django.db import models
 from django.conf import settings
 
 
+class UnreadMessagesManager(models.Manager):
+    """Custom manager to filter unread messages for a user"""
+
+    def for_user(self, user):
+        return (
+            super()
+            .get_queryset()
+            .filter(receiver=user, read=False)  # only unread messages for user
+            .only("id", "sender", "content", "created_at")  # ✅ optimization
+        )
+
+
 class Message(models.Model):
     sender = models.ForeignKey(
         settings.AUTH_USER_MODEL, related_name="sent_messages", on_delete=models.CASCADE
@@ -24,6 +36,12 @@ class Message(models.Model):
     parent_message = models.ForeignKey(
         "self", null=True, blank=True, related_name="replies", on_delete=models.CASCADE
     )
+    # ✅ new field
+    read = models.BooleanField(default=False)
+
+    # Managers
+    objects = models.Manager()  # default manager
+    unread = UnreadMessagesManager()  # custom unread manager
 
     def __str__(self):
         return f"from {self.sender} to {self.receiver}: {self.content[:20]}"
