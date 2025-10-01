@@ -13,7 +13,14 @@ class Message(models.Model):
     )
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
-    edited = models.BooleanField(default=False)
+    edited = models.BooleanField(default=False)  # ✅ flag for edited messages
+    edited_by = models.ForeignKey(  # ✅ who last edited
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        related_name="edited_messages",
+        on_delete=models.SET_NULL,
+    )
 
     def __str__(self):
         return f"from {self.sender} to {self.receiver}: {self.content[:20]}"
@@ -27,6 +34,13 @@ class MessageHistory(models.Model):
     )
     old_content = models.TextField()
     edited_at = models.TimeField(auto_now_add=True)
+    edited_by = models.ForeignKey(  # ✅ who made the edit
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="message_edits",
+    )
 
     def __str__(self):
         return f"History of Message {self.message.id} at {self.edited_at}"

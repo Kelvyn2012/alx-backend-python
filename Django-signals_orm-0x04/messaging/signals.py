@@ -13,7 +13,7 @@ def create_notification(sender, instance, created, **kwargs):
 @receiver(pre_save, sender=Message)
 def log_message_edit(sender, instance, **kwargs):
     """Log old content before a message is updated"""
-    if not instance.pk:  # new message, skip
+    if not instance.pk:  # skip if it's a new message
         return
 
     try:
@@ -21,9 +21,11 @@ def log_message_edit(sender, instance, **kwargs):
     except Message.DoesNotExist:
         return
 
-    # Check if content is being changed
+    # If content changed, log it in history
     if old_message.content != instance.content:
-        # Save old content into history
-        MessageHistory.objects.create(message=instance, old_content=old_message.content)
-        # Mark the message as edited
+        MessageHistory.objects.create(
+            message=instance,
+            old_content=old_message.content,
+            edited_by=instance.edited_by,  # ✅ log who did the edit
+        )
         instance.edited = True
