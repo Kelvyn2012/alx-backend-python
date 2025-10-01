@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model, logout
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
 
 User = get_user_model()
 
@@ -57,9 +59,10 @@ def send_message(request, receiver_id):
 
 
 @login_required
+@vary_on_cookie
+@cache_page(60)  # cache this view for 60 seconds, per user session
 def conversation_view(request, user_id):
     """View threaded conversation between current user and another user"""
-    # ✅ Using select_related & prefetch_related
     messages = (
         (
             Message.objects.filter(sender=request.user, receiver_id=user_id)
