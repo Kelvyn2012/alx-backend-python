@@ -1,21 +1,20 @@
-# Use official Python 3.10 image
+# Use the official Python 3.10 image from Docker Hub as a base image
 FROM python:3.10
 
-# Set working directory
+# Set the working directory inside the container
 WORKDIR /app
 
-# Prevent Python from buffering stdout/stderr
-ENV PYTHONUNBUFFERED=1
+# Copy the requirements.txt file into the container
+COPY requirements.txt /app/
 
-# Copy requirements first and install dependencies
-COPY requirements.txt .
+# Install dependencies from requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire app
-COPY . .
+# Copy the rest of the application code into the container
+COPY . /app/
 
-# Expose Django default port
+# Expose the port that Django runs on (default is 8000)
 EXPOSE 8000
 
-# Run migrations and start Django server (includes port)
+# Run Django app on the specified port (default is 8000)
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
