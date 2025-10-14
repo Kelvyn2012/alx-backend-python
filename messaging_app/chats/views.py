@@ -4,12 +4,20 @@ from django.contrib.auth import get_user_model
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 from .permissions import IsParticipantOfConversation
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .filters import MessageFilter
 from .pagination import MessagePagination
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.response import Response
+from rest_framework.decorators import permission_classes
+
 
 User = get_user_model()
+
+
+@permission_classes([AllowAny])
+def api_home(request):
+    return Response({"status": "success", "message": "Messaging API is running 🚀"})
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
