@@ -5,12 +5,12 @@ pipeline {
         VENV_DIR = 'venv'
     }
 
-   stage('Checkout') {
-    steps {
-        echo 'Repository already checked out by Jenkins.'
-    }
-}
-
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Repository already checked out by Jenkins.'
+            }
+        }
 
         stage('Set up Python environment') {
             steps {
