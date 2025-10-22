@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'python:3.10'   // or 3.11 if you prefer
+            args '-u'             // ensures logs show up properly
+        }
+    }
 
     environment {
         VENV_DIR = 'venv'
