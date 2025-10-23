@@ -1,19 +1,11 @@
 pipeline {
   agent any
-
-  options {
-    timestamps()
-  }
-
-  parameters {
-    string(name: 'BRANCH', defaultValue: 'main', description: 'Git branch to build')
-  }
-
+  options { timestamps() }
+  parameters { string(name: 'BRANCH', defaultValue: 'main', description: 'Git branch to build') }
   environment {
-    GITHUB_CREDENTIALS_ID = 'github-creds'     // update if you used a different ID
+    GITHUB_CREDENTIALS_ID = 'github-creds'   // match your actual ID
     REPORT_DIR = 'reports'
   }
-
   stages {
     stage('Checkout') {
       steps {
@@ -27,45 +19,38 @@ pipeline {
         ])
       }
     }
-
-    stage('Set up Python & Install Deps') {
+    stage('Docker sanity check') {
       steps {
         wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
-          dir('messaging_app') {
-            withPythonEnv('Python 3.10') {
-              sh 'python --version'
-              sh 'python -m venv .venv'
-              sh '. .venv/bin/activate && python -m pip install --upgrade pip'
-              sh '''
-                . .venv/bin/activate
-                if [ -f requirements.txt ]; then
-                  pip install -r requirements.txt
-                fi
-                pip install pytest pytest-cov
-              '''
+          sh 'docker version'
+        }
+      }
+    }
+    stage('Run tests in python:3.10') {
+      steps {
+        wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
+          script {
+            docker.image('python:3.10').inside('-u 0:0') {
+              dir('messaging_app') {
+                sh '''
+                  python --version
+                  python -m pip install --upgrade pip
+                  if [ -f requirements.txt ]; then
+                    pip install -r requirements.txt
+                  fi
+                  pip install pytest pytest-cov
+                  mkdir -p ${REPORT_DIR}
+                  pytest -q \
+                    --junitxml=${REPORT_DIR}/pytest-junit.xml \
+                    --cov=. --cov-report=term-missing
+                '''
+              }
             }
           }
         }
       }
     }
-
-    stage('Run Tests (pytest)') {
-      steps {
-        wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
-          dir('messaging_app') {
-            sh 'mkdir -p ${REPORT_DIR}'
-            sh '''
-              . .venv/bin/activate
-              pytest -q \
-                --junitxml=${REPORT_DIR}/pytest-junit.xml \
-                --cov=. --cov-report=term-missing
-            '''
-          }
-        }
-      }
-    }
   }
-
   post {
     always {
       junit allowEmptyResults: true, testResults: 'messaging_app/reports/pytest-junit.xml'
