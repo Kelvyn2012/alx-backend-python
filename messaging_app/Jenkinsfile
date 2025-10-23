@@ -1,52 +1,78 @@
 pipeline {
-    agent {
-        docker {
-            image 'python:3.10'   // or 3.11 if you prefer
-            args '-u'             // ensures logs show up properly
-        }
+  agent any
+
+  options {
+    timestamps()
+    ansiColor('xterm')
+  }
+
+  parameters {
+    string(name: 'BRANCH', defaultValue: 'main', description: 'Git branch to build')
+  }
+
+  environment {
+    // Change if you used a different credentials ID
+    GITHUB_CREDENTIALS_ID = 'github-creds'
+    REPORT_DIR = 'reports'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        // Checkout the whole repo so we can enter the messaging_app dir
+        checkout([
+          $class: 'GitSCM',
+          branches: [[name: "*/${params.BRANCH}"]],
+          userRemoteConfigs: [[
+            url: 'https://github.com/<your-org>/alx-backend-python.git',
+            credentialsId: GITHUB_CREDENTIALS_ID
+          ]]
+        ])
+      }
     }
 
-    environment {
-        VENV_DIR = 'venv'
+    stage('Set up Python (ShiningPanda) & Install Deps') {
+      steps {
+        dir('messaging_app') {
+          withPythonEnv('Python 3.10') {
+            sh 'python --version'
+            // Create an isolated venv to avoid polluting the tool’s base install
+            sh 'python -m venv .venv'
+            sh '. .venv/bin/activate && python -m pip install --upgrade pip'
+            // Install your app deps + pytest (and pytest-html if you want HTML too)
+            sh '''
+              . .venv/bin/activate
+              if [ -f requirements.txt ]; then
+                pip install -r requirements.txt
+              fi
+              pip install pytest pytest-cov
+            '''
+          }
+        }
+      }
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                echo 'Repository already checked out by Jenkins.'
-            }
+    stage('Run Tests (pytest)') {
+      steps {
+        dir('messaging_app') {
+          sh 'mkdir -p ${REPORT_DIR}'
+          sh '''
+            . .venv/bin/activate
+            pytest -q \
+              --junitxml=${REPORT_DIR}/pytest-junit.xml \
+              --cov=. --cov-report=term-missing
+          '''
         }
-
-        stage('Set up Python environment') {
-            steps {
-                sh '''
-                    python3 -m venv ${VENV_DIR}
-                    . ${VENV_DIR}/bin/activate
-                    pip install --upgrade pip
-                    pip install -r messaging_app/requirements.txt
-                '''
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                sh '''
-                    . ${VENV_DIR}/bin/activate
-                    pytest messaging_app/tests --junitxml=report.xml
-                '''
-            }
-        }
-
-        stage('Publish Test Report') {
-            steps {
-                junit 'report.xml'
-            }
-        }
+      }
     }
+  }
 
-    post {
-        always {
-            echo "Pipeline completed."
-        }
+  post {
+    always {
+      // Publish JUnit results (visible in Jenkins "Tests" tab)
+      junit allowEmptyResults: true, testResults: 'messaging_app/reports/pytest-junit.xml'
+      // Keep the raw reports as build artifacts
+      archiveArtifacts artifacts: 'messaging_app/reports/**', fingerprint: true
     }
+  }
 }
