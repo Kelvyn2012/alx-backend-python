@@ -74,3 +74,4 @@ pipeline {
         }
     }
 }
+["messaging_app/requirements.txt"]
