@@ -2,10 +2,10 @@ pipeline {
   agent any
   options { timestamps() }
   parameters {
-    string(name: 'BRANCH', defaultValue: 'main', description: 'Git branch to build')  // Define BRANCH parameter
+    string(name: 'BRANCH', defaultValue: 'main', description: 'Git branch to build')
   }
   environment {
-    GITHUB_CREDENTIALS_ID = 'github-creds'  // Ensure this matches your GitHub credentials ID in Jenkins
+    GITHUB_CREDENTIALS_ID = 'github-creds'  // Match your actual credentials ID
     REPORT_DIR = 'reports'
     PYTHON_VERSION = '3.10'
     DOCKER_IMAGE = "python:${PYTHON_VERSION}"
@@ -23,7 +23,7 @@ pipeline {
         ])
       }
     }
-
+    
     stage('Docker sanity check') {
       steps {
         wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
@@ -38,7 +38,10 @@ pipeline {
           script {
             docker.image(DOCKER_IMAGE).inside('-u 0:0') {
               dir('messaging_app') {
-                // Check if requirements.txt exists and install dependencies
+                // Ensure the report directory exists
+                sh 'mkdir -p ${REPORT_DIR}'
+
+                // Install dependencies from requirements.txt if it exists
                 sh '''
                   if [ -f requirements.txt ]; then
                     echo "Installing dependencies..."
@@ -49,12 +52,11 @@ pipeline {
                   fi
                 '''
 
-                // Install additional testing tools (pytest and coverage)
+                // Install pytest and pytest-cov (for test reporting)
                 sh 'pip3 install pytest pytest-cov'
 
-                // Run tests and generate reports
+                // Run pytest and generate reports
                 sh '''
-                  mkdir -p ${REPORT_DIR}
                   pytest -q --junitxml=${REPORT_DIR}/pytest-junit.xml --cov=. --cov-report=term-missing
                 '''
               }
@@ -64,7 +66,6 @@ pipeline {
       }
     }
   }
-
   post {
     always {
       // Handle empty test results gracefully
