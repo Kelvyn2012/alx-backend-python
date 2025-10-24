@@ -16,7 +16,7 @@ pipeline {
             steps {
                 echo 'Cloning repository from GitHub...'
                 git branch: 'main', 
-                    url: 'https://github.com/EB-Sode/alx-backend-python.git',
+                    url: 'https://github.com/kelvyn2012/alx-backend-python.git',
                     credentialsId: 'github-creds'  // <-- Add your Jenkins credentials ID here
                 dir('messaging_app') {
                     echo 'Using messaging_app subdirectory...'
@@ -28,8 +28,13 @@ pipeline {
             steps {
                 dir('messaging_app') {
                     echo 'Installing dependencies...'
+                  if [ -f requirements.txt ]; then
+                    echo "Installing dependencies..."
                     sh 'pip3 install --upgrade pip'
                     sh 'pip3 install -r requirements.txt'
+                  else
+                    echo "No requirements.txt found, skipping dependency installation."
+                  
                 }
             }
         }
