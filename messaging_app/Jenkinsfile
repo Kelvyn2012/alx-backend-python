@@ -2,10 +2,10 @@ pipeline {
   agent any
   options { timestamps() }
   parameters {
-    string(name: 'BRANCH', defaultValue: 'main', description: 'Git branch to build')
+    string(name: 'BRANCH', defaultValue: 'main', description: 'Git branch to build')  // Define BRANCH parameter
   }
   environment {
-    GITHUB_CREDENTIALS_ID = 'github-creds'   // Match your actual ID
+    GITHUB_CREDENTIALS_ID = 'github-creds'  // Ensure this matches your GitHub credentials ID in Jenkins
     REPORT_DIR = 'reports'
     PYTHON_VERSION = '3.10'
     DOCKER_IMAGE = "python:${PYTHON_VERSION}"
@@ -15,7 +15,7 @@ pipeline {
       steps {
         checkout([
           $class: 'GitSCM',
-          branches: [[name: "*/${params.BRANCH}"]],
+          branches: [[name: "*/${params.BRANCH}"]],  // Use the BRANCH parameter to check out the specified branch
           userRemoteConfigs: [[
             url: 'https://github.com/Kelvyn2012/alx-backend-python.git',
             credentialsId: GITHUB_CREDENTIALS_ID  // Reference your GitHub credentials here
@@ -23,7 +23,7 @@ pipeline {
         ])
       }
     }
-    
+
     stage('Docker sanity check') {
       steps {
         wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
@@ -64,8 +64,10 @@ pipeline {
       }
     }
   }
+
   post {
     always {
+      // Handle empty test results gracefully
       junit allowEmptyResults: true, testResults: 'messaging_app/reports/pytest-junit.xml'
       archiveArtifacts artifacts: 'messaging_app/reports/**', fingerprint: true
     }
