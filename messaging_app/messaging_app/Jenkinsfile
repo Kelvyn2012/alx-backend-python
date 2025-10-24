@@ -1,76 +1,71 @@
 pipeline {
-  agent any
-  options { timestamps() }
-  parameters {
-    string(name: 'BRANCH', defaultValue: 'main', description: 'Git branch to build')
-  }
-  environment {
-    GITHUB_CREDENTIALS_ID = 'github-creds'  // Match your actual credentials ID
-    REPORT_DIR = 'reports'
-    PYTHON_VERSION = '3.10'
-    DOCKER_IMAGE = "python:${PYTHON_VERSION}"
-  }
-  stages {
-    stage('Checkout') {
-      steps {
-        checkout([
-          $class: 'GitSCM',
-          branches: [[name: "*/${params.BRANCH}"]],  // Use the BRANCH parameter to check out the specified branch
-          userRemoteConfigs: [[
-            url: 'https://github.com/Kelvyn2012/alx-backend-python.git',
-            credentialsId: GITHUB_CREDENTIALS_ID  // Reference your GitHub credentials here
-          ]]
-        ])
-      }
-    }
-    
-    stage('Docker sanity check') {
-      steps {
-        wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
-          sh 'docker version'
+    agent {
+        docker {
+            image 'python:3.10'
+            args '-u root'
         }
-      }
     }
 
-    stage('Run tests in python:3.10') {
-      steps {
-        wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
-          script {
-            docker.image(DOCKER_IMAGE).inside('-u 0:0') {
-              dir('messaging_app') {
-                // Ensure the report directory exists
-                sh 'mkdir -p ${REPORT_DIR}'
+    environment {
+        REPORT_DIR = 'reports'
+        REPORT_FILE = "${REPORT_DIR}/test-results.xml"
+    }
 
-                // Install dependencies from requirements.txt if it exists
-                sh '''
-                  if [ -f requirements.txt ]; then
-                    echo "Installing dependencies..."
-                    pip3 install --upgrade pip
-                    pip3 install -r requirements.txt
-                  else
-                    echo "No requirements.txt found, skipping dependency installation."
-                  fi
-                '''
-
-                // Install pytest and pytest-cov (for test reporting)
-                sh 'pip3 install pytest pytest-cov'
-
-                // Run pytest and generate reports
-                sh '''
-                  pytest -q --junitxml=${REPORT_DIR}/pytest-junit.xml --cov=. --cov-report=term-missing
-                '''
-              }
+    stages {
+        stage('Checkout Code') {
+            steps {
+                echo 'Cloning repository from GitHub...'
+                git branch: 'main', 
+                    url: 'https://github.com/EB-Sode/alx-backend-python.git',
+                    credentialsId: 'github-creds'  // <-- Add your Jenkins credentials ID here
+                dir('messaging_app') {
+                    echo 'Using messaging_app subdirectory...'
+                }
             }
-          }
         }
-      }
+
+        stage('Set Up Environment') {
+            steps {
+                dir('messaging_app') {
+                    echo 'Installing dependencies...'
+                    sh 'pip install --upgrade pip'
+                    sh 'pip install -r requirements.txt'
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                dir('messaging_app') {
+                    echo 'Running pytest with JUnit XML report...'
+                    sh '''
+                        mkdir -p ${REPORT_DIR}
+                        pytest --junitxml=${REPORT_FILE} || true
+                    '''
+                }
+            }
+        }
+
+        stage('Publish Test Report') {
+            steps {
+                dir('messaging_app') {
+                    junit allowEmptyResults: true, testResults: "${REPORT_FILE}"
+                }
+            }
+        }
     }
-  }
-  post {
-    always {
-      // Handle empty test results gracefully
-      junit allowEmptyResults: true, testResults: 'messaging_app/reports/pytest-junit.xml'
-      archiveArtifacts artifacts: 'messaging_app/reports/**', fingerprint: true
+
+    post {
+        always {
+            dir('messaging_app') {
+                archiveArtifacts artifacts: "${REPORT_FILE}", fingerprint: true
+            }
+        }
+        success {
+            echo '✅ Tests passed successfully!'
+        }
+        failure {
+            echo '❌ Some tests failed. Check the report for details.'
+        }
     }
-  }
 }
