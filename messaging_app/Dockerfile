@@ -4,14 +4,14 @@ FROM python:3.10
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the requirements.txt file into the container
-COPY requirements.txt /app/
+# Copy the requirements.txt file into the container (adjust the path if necessary)
+COPY messaging_app/requirements.txt /app/
 
 # Install dependencies from requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy the rest of the application code into the container
-COPY . /app/
+COPY messaging_app /app/
 
 # Expose the port that Django runs on (default is 8000)
 EXPOSE 8000
