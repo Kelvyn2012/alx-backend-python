@@ -6,7 +6,7 @@ pipeline {
   }
   environment {
     GITHUB_CREDENTIALS_ID = 'github-creds'  // Match your actual credentials ID
-    DOCKER_CREDENTIALS_ID = 'docker-hub-creds'  // Docker Hub credentials ID
+    DOCKER_CREDENTIALS_ID = 'docker-hub-creds' // Docker Hub credentials ID
     IMAGE_NAME = 'kelvyn2012/django-messaging-app' // Docker image name
     REPORT_DIR = 'reports'
     PYTHON_VERSION = '3.10'
@@ -17,7 +17,7 @@ pipeline {
       steps {
         checkout([
           $class: 'GitSCM',
-          branches: [[name: "*/${params.BRANCH}"]],  // Use the BRANCH parameter to check out the specified branch
+          branches: [[name: "*/${params.BRANCH}"]],
           userRemoteConfigs: [[
             url: 'https://github.com/Kelvyn2012/alx-backend-python.git',
             credentialsId: GITHUB_CREDENTIALS_ID  // Reference your GitHub credentials here
@@ -25,7 +25,7 @@ pipeline {
         ])
       }
     }
-    
+
     stage('Docker sanity check') {
       steps {
         wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
@@ -34,7 +34,6 @@ pipeline {
       }
     }
 
-    // Build Docker image
     stage('Build Docker image') {
       steps {
         wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
@@ -46,7 +45,6 @@ pipeline {
       }
     }
 
-    // Push Docker image to Docker Hub
     stage('Push Docker image') {
       steps {
         withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
@@ -69,25 +67,14 @@ pipeline {
           script {
             docker.image(DOCKER_IMAGE).inside('-u 0:0') {
               dir('messaging_app') {
-                // Ensure the report directory exists
-                sh 'mkdir -p ${REPORT_DIR}'
-
-                // Install dependencies from requirements.txt if it exists
                 sh '''
+                  python --version
+                  python -m pip install --upgrade pip
                   if [ -f requirements.txt ]; then
-                    echo "Installing dependencies..."
-                    pip3 install --upgrade pip
                     pip3 install -r requirements.txt
-                  else
-                    echo "No requirements.txt found, skipping dependency installation."
                   fi
-                '''
-
-                // Install pytest and pytest-cov (for test reporting)
-                sh 'pip3 install pytest pytest-cov'
-
-                // Run pytest and generate reports
-                sh '''
+                  pip3 install pytest pytest-cov
+                  mkdir -p ${REPORT_DIR}
                   pytest -q --junitxml=${REPORT_DIR}/pytest-junit.xml --cov=. --cov-report=term-missing
                 '''
               }
@@ -99,7 +86,6 @@ pipeline {
   }
   post {
     always {
-      // Handle empty test results gracefully
       junit allowEmptyResults: true, testResults: 'messaging_app/reports/pytest-junit.xml'
       archiveArtifacts artifacts: 'messaging_app/reports/**', fingerprint: true
     }
