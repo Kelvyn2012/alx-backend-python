@@ -6,6 +6,8 @@ pipeline {
   }
   environment {
     GITHUB_CREDENTIALS_ID = 'github-creds'  // Match your actual credentials ID
+    DOCKER_CREDENTIALS_ID = 'docker-hub-creds'  // Docker Hub credentials ID
+    IMAGE_NAME = 'kelvyn2012/django-messaging-app' // Docker image name
     REPORT_DIR = 'reports'
     PYTHON_VERSION = '3.10'
     DOCKER_IMAGE = "python:${PYTHON_VERSION}"
@@ -28,6 +30,35 @@ pipeline {
       steps {
         wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
           sh 'docker version'
+        }
+      }
+    }
+
+    // Build Docker image
+    stage('Build Docker image') {
+      steps {
+        wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm']) {
+          script {
+            // Build the Docker image for the Django messaging app
+            docker.build("${IMAGE_NAME}:${params.BRANCH}-${BUILD_NUMBER}", "-f messaging_app/Dockerfile .")
+          }
+        }
+      }
+    }
+
+    // Push Docker image to Docker Hub
+    stage('Push Docker image') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+          script {
+            // Login to Docker Hub
+            sh '''
+              echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+            '''
+            
+            // Push the Docker image to Docker Hub
+            docker.push("${IMAGE_NAME}:${params.BRANCH}-${BUILD_NUMBER}")
+          }
         }
       }
     }
