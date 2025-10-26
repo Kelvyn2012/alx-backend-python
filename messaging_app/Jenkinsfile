@@ -49,13 +49,15 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
           script {
-            // Login to Docker Hub
+            // Docker login using sh command
             sh '''
               echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
             '''
             
-            // Push the Docker image to Docker Hub
-            docker.push("${IMAGE_NAME}:${params.BRANCH}-${BUILD_NUMBER}")
+            // Push the Docker image to Docker Hub using sh command
+            sh '''
+              docker push ${IMAGE_NAME}:${params.BRANCH}-${BUILD_NUMBER}
+            '''
           }
         }
       }
