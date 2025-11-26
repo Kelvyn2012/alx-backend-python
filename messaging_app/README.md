@@ -1,8 +1,9 @@
-# Messaging App (Django + Django REST Framework)
+# Messaging-App (Django + Django REST Framework)
 
 ## 📌 Overview
 This project is a simple Django-based backend setup with **Django REST Framework (DRF)**.  
 It provides the foundation for building RESTful APIs to power a messaging system.
+just needed to add this
 
 ---
 
