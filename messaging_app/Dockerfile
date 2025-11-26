@@ -1,20 +1,28 @@
-# Use the official Python 3.10 image from Docker Hub as a base image
+# Use Python 3.10 as base image
 FROM python:3.10
 
-# Set the working directory inside the container
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Set work directory
 WORKDIR /app
 
-# Copy the requirements.txt file into the container (adjust the path if necessary)
-COPY messaging_app/requirements.txt /app/
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies from requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+# Install Python dependencies
+COPY requirements.txt /app/
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-# Copy the rest of the application code into the container
-COPY messaging_app /app/
+# Copy project files
+COPY . /app/
 
-# Expose the port that Django runs on (default is 8000)
+# Expose port 8000
 EXPOSE 8000
 
-# Run Django app on the specified port (default is 8000)
+# Run Django development server
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
